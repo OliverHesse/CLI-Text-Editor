@@ -1,0 +1,3 @@
+When at beginning of an empty new line backspace crashes the application - Not Fixed
+When at beginning at filled line backspace doesnt move it to the next line instead starts deleting characters - Not Fixed
+Pressing Enter - Not Fixed
