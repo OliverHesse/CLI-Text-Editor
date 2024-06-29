@@ -2,7 +2,7 @@ use crossterm::{cursor::{self, DisableBlinking, EnableBlinking, Hide, MoveTo, Mo
 };
 use displaylib::{Action, Change, ChangeStack, ChangeType, Line, Span, StyledCharacter};
 use loglib::Logger;
-use std::{io::{self, Write}};
+use std::{  io::{self, Write}};
 mod displaylib;
 mod loglib;
 fn print_events(stdout: &mut io::Stdout) -> std::io::Result<()> {
@@ -34,6 +34,15 @@ fn refresh_line(stdout: &mut io::Stdout,current_pos: &[u16; 2],displayText:&mut 
     displayText[usize::from(current_pos[1])].queue_line(stdout,system_logger);
     system_logger.log(displayText[usize::from(current_pos[1])].log_line());
     Ok(())
+}
+fn refresh_screen(stdout: &mut io::Stdout,displayText:&mut Vec<Line>,system_logger:&mut Logger)->io::Result<()>{
+    system_logger.log(format!("{}",displayText.len()));
+    stdout.queue(terminal::Clear(terminal::ClearType::All))?;
+    for line in displayText{
+        line.queue_line(stdout, system_logger);
+    } 
+    return Ok(()); 
+
 }
 fn main() -> io::Result<()> {
    
@@ -164,30 +173,70 @@ fn main_loop() -> io::Result<()> {
                         KeyCode::Backspace=>{
                             //TODO make work with new system
                             //TODO breaks when line ends, edit so move to next line
-                            if current_pos[0] > 0{
-                                current_pos[0] -= 1;
+                            if displayText.len() != 0{
+                                if current_pos[0] == 0{
+                                    if displayText[usize::from(current_pos[1])].len == 0 {
+                                        displayText.remove(usize::from(current_pos[1]));
+                                        
+                                    
+                                        stdout.queue(Hide)?;
+                                        stdout.queue(MoveTo(0,0))?;
+                                        refresh_screen(&mut stdout,&mut displayText,&mut system_logger)?;
+                                        stdout.queue(MoveTo(0,current_pos[1]))?;
+                                        stdout.queue(Show)?;
+
+                                        if current_pos[1] != 0{
+                                            current_pos[1] -= 1;
+                                        }
+
+                                    }else{
+                                        if current_pos[1] >0{
+                                            //merge current line with line above and refresh screen
+                                            
+                                            let mut current_line = displayText.remove(usize::from(current_pos[1]));
+                                           
+                                            current_pos[1] -= 1;
+                                            current_pos[0] = displayText[usize::from(current_pos[1])].len;
+                                            stdout.queue(Hide)?;
+                                            stdout.queue(MoveTo(0,0))?;
+
+                                            displayText[usize::from(current_pos[1])].merge_line(&mut current_line,&mut system_logger);
+                                           
+                                            refresh_screen(&mut stdout, &mut displayText, &mut system_logger)?;
+                                            stdout.queue(Show)?;
+                                            stdout.queue(MoveTo(current_pos[0],current_pos[1]))?;
+                                           
+                                        }
+                                    }
+                                }else{
+                                    if current_pos[0] > 0{
+                                        current_pos[0] -= 1;
+                                        
+                                    };
+                                    let ch = match displayText[usize::from(current_pos[1])].get_char(usize::from(current_pos[0])){
+                                        Some(c)=>c,
+                                        None=>panic!("line should have been deleted")
+                                        
+                                    };
+                                    main_stack.add_action(Action{
+                                        all_changes:vec![Change{
+                                            row:current_pos[1],
+                                            column:current_pos[0],
+                                            change_type:ChangeType::Delete(StyledCharacter{
+                                                ch:ch,
+                                                attributes:active_attributes,
+                                                background_color:Color::Black,
+                                                foreground_color:Color::White})
+                                        }]
+                                    }); 
+                                   
+                                    displayText[usize::from(current_pos[1])].remove_character(current_pos[0],&mut system_logger);
+                                    
                                 
-                            };
-                            let ch = match displayText[usize::from(current_pos[1])].get_char(usize::from(current_pos[0])){
-                                Some(c)=>c,
-                                None=>panic!("attempted to delete blank character")
-                            };
-                            main_stack.add_action(Action{
-                                all_changes:vec![Change{
-                                    row:current_pos[1],
-                                    column:current_pos[0],
-                                    change_type:ChangeType::Delete(StyledCharacter{
-                                        ch:ch,
-                                        attributes:active_attributes,
-                                        background_color:Color::Black,
-                                        foreground_color:Color::White})
-                                }]
-                            }); 
-                            system_logger.log(format!("Attempted to delete character now refreshing column{}\n",current_pos[0]));
-                            displayText[usize::from(current_pos[1])].remove_character(current_pos[0],&mut system_logger);
-                            system_logger.log(format!("character deleted refreshing line column{}\n",current_pos[0]));
-                            refresh_line(&mut stdout,&current_pos,&mut displayText,&mut system_logger)?;
-                            
+                                    refresh_line(&mut stdout,&current_pos,&mut displayText,&mut system_logger)?;
+                                }
+                            }
+                                
                         }
                         KeyCode::Char(ch)=>{
                             //TODO Current task. add ctrl B and ctrl U
@@ -198,15 +247,15 @@ fn main_loop() -> io::Result<()> {
                                         'u'=>active_attributes.toggle(Attribute::Underlined),
                                         'z'=>{
                                             main_stack.undo_change(&mut cache_stack, &mut displayText, &mut system_logger, &mut current_pos);
-                                            system_logger.log("error is not here\n".to_string());
+                                            
                                             refresh_line(&mut stdout, &current_pos, &mut displayText, &mut system_logger)?;
-                                            system_logger.log("error is not here2\n".to_string());
+                                            
                                         },
                                         'y'=>{
                                             cache_stack.redo_change(&mut main_stack, &mut displayText, &mut system_logger, &mut current_pos);
-                                            system_logger.log("error is not here\n".to_string());
+                                           
                                             refresh_line(&mut stdout, &current_pos, &mut displayText, &mut system_logger)?;
-                                            system_logger.log("error is not here2\n".to_string());
+                                            
                                         },
                                         _=>{}
                                     }
@@ -215,6 +264,7 @@ fn main_loop() -> io::Result<()> {
                                     displayText[usize::from(current_pos[1])].add_character(ch,current_pos[0],active_attributes.clone(),&mut system_logger);
                                     current_pos[0] += 1;
                                     refresh_line(&mut stdout,&current_pos,&mut displayText,&mut system_logger)?;
+                                    cache_stack.clear_stack();
                                     main_stack.add_action(Action{
                                         all_changes:vec![Change{
                                             row:current_pos[1],
@@ -229,6 +279,45 @@ fn main_loop() -> io::Result<()> {
                                 _=>{}
                             }
                      
+                        },
+                        KeyCode::Enter if event.modifiers==KeyModifiers::NONE=>{
+                            //3 scenarios
+                            //1 at end of line - create new line below
+                            //2 at start of line - create new line above
+                            //3 in between - split the line
+                            let mut new_line:Option<Line> = Some(Line{text:Vec::new(),len:0});
+                            let mut new_line_pos:u16 = 0;
+                            if current_pos[0] == 0{
+                                //create new line at index 0
+                         
+                                new_line_pos = current_pos[1];
+                                main_stack.add_change(ChangeType::AddLine, &mut current_pos);
+                                current_pos[1] +=1;
+                            }else if current_pos[0] == displayText[usize::from(current_pos[1])].len{
+                                
+                                new_line_pos = current_pos[1]+1;
+                                current_pos[1] +=1;
+                                main_stack.add_change(ChangeType::AddLine, &mut current_pos);
+                            }else{
+                                new_line = displayText[usize::from(current_pos[1])].split_line(usize::from(current_pos[0]));
+                                new_line_pos = current_pos[1]+1;
+                                main_stack.add_owned_line(new_line.as_mut().unwrap(), &mut current_pos);
+                                current_pos[1] +=1;
+                            }
+                            let new_line = match new_line{
+                                Some(line)=>line,
+                                None=>panic!("there is supposed to be something here")
+                            };
+                           
+                            current_pos[0] = 0;
+                            
+                            displayText.insert(usize::from(new_line_pos), new_line);
+                            stdout.queue(Hide)?;
+                            stdout.queue(MoveTo(0,0))?;                                
+                            refresh_screen(&mut stdout, &mut displayText, &mut system_logger)?;
+                            stdout.queue(Show)?;
+                            stdout.queue(MoveTo(current_pos[0],current_pos[1]))?;
+
                         },
                         _ => {}
                     }

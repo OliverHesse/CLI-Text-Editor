@@ -1,4 +1,4 @@
-use std::{ thread::current};
+use std::{ fmt::format, thread::current};
 
 use crossterm::style::{Attribute, Attributes, Color};
 
@@ -7,7 +7,9 @@ use crate::loglib::{self, Logger};
 pub enum ChangeType {
     Add(StyledCharacter),
     Delete(StyledCharacter),
-    ChangeAttribute(StyledCharacter)
+    ChangeAttribute(StyledCharacter), //for when i add in multi select
+    AddLine,
+    RemoveLine,
 }
 #[derive(Clone,Debug)]
 pub struct StyledCharacter{
@@ -126,6 +128,18 @@ impl ChangeStack {
                     //change styling on character in that pos
                     //TODO add method in line to do this
                 },
+                ChangeType::AddLine=>{
+                    displayText.remove(usize::from(change.row));
+                    current_pos[0] = change.column;
+                    current_pos[1] = change.row-1;
+                },
+                ChangeType::RemoveLine=>{
+                    let new_line = Line{text:Vec::new(),len:0};
+                    displayText.insert(usize::from(change.row), new_line);
+                    current_pos[0] = change.column;
+                    current_pos[1] = change.row+1;
+                },
+                
             };
             
         }
@@ -162,11 +176,41 @@ impl ChangeStack {
                     //change styling on character in that pos
                     //TODO add method in line to do this
                 },
+                ChangeType::RemoveLine=>{
+                    displayText.remove(usize::from(change.row));
+                    current_pos[0] = change.column;
+                    current_pos[1] = change.row-1;
+                },
+                ChangeType::AddLine=>{
+                    let new_line = Line{text:Vec::new(),len:0};
+                    displayText.insert(usize::from(change.row), new_line);
+                    current_pos[0] = change.column;
+                    current_pos[1] = change.row+1;
+                },
             }
         }
     }
+    pub fn add_owned_line(&mut self,new_line:&mut Line,current_pos: &mut [u16; 2]){
+        let mut changes = Vec::<Change>::new();
+        changes.push(Change{row:current_pos[1],column:current_pos[0],change_type:ChangeType::AddLine});
+        let mut curr_x = current_pos[0].clone();
+        for span_i in 0..new_line.text.len(){
+            //loop through each Span
+            for ch_i in 0..new_line.text[span_i].text.len(){
+                let new_ch = StyledCharacter{ch:new_line.text[span_i].text[ch_i].clone(),background_color:new_line.text[span_i].BackgroundColor,foreground_color:new_line.text[span_i].Color,attributes:new_line.text[span_i].Attributes};
+                changes.push(Change{row:current_pos[1],column:curr_x,change_type:ChangeType::Delete(new_ch)});
+                curr_x += 1
+            }
+        }
+        //changes.reverse();
+        self.add_action(Action{all_changes:changes});
+    }
+    pub fn clear_stack(&mut self){
+        self.actions.clear();
+    }
+
 }
-#[derive(Clone,Debug)]
+#[derive(Clone,Debug,PartialEq)]
 pub struct Span{
     pub text:Vec<char>,
     pub BackgroundColor:crossterm::style::Color,
@@ -214,7 +258,13 @@ impl Line{
         //TODO get to split span when char of different styling inserted
         //go through the vec's until a valid vec is reached
         let mut current_distance = 0;
-        
+        if self.text.len() == 0{
+            //no span exists create new one
+            let new_span = Span{text:vec![ch],BackgroundColor:Color::Black,Color:Color::White,Attributes:ch_attributes};
+            self.text.push(new_span);
+            self.len = 1;
+            return;
+        }
         for span_i in 0..self.text.len(){
             let as_u16:Option<u16> = self.text[span_i].text.len().try_into().ok();
             match as_u16{
@@ -311,6 +361,48 @@ impl Line{
             }
         }
     }
+    pub fn merge_line(&mut self,other_line: &mut Line,system_logger:&mut loglib::Logger){
+        self.len += other_line.len;
+        if self.text[self.text.len()-1].Attributes == other_line.text[0].Attributes{
+            //merge the 2 spans
+            let end = self.text.len()-1;
+           
+            let mut new_span = other_line.text.remove(0);
+            
+            self.text[end].text.append(&mut new_span.text);
+            
+          
+        }
+        self.text.append(&mut other_line.text);
+    }
+    pub fn split_line(&mut self,index: usize)->Option<Line>{
+        //first i need to find the Span that contains the split segment
+        let mut current_distance: usize= 0;
+        for span_i in 0..self.text.len(){
+            let length = self.text[span_i].text.len();
+            if current_distance<=index && index<(current_distance+length){
+                //index is within this range of valid index for this span
+                let mut edit_span = self.text.remove(span_i);
+                let new_span_char_vec = edit_span.text.split_off(index-current_distance);
+                let mut new_line_span_vec = self.text.split_off(span_i);
+                let mut new_span = edit_span.clone();
+                self.text.push(edit_span);
+                new_span.text = new_span_char_vec;
+
+                new_line_span_vec.insert(0,new_span);
+
+                let new_line = Line{
+                    text:new_line_span_vec,
+                    len: (self.len-((index) as u16))
+                };
+                self.len = (index) as u16;
+                
+                return Some(new_line);
+            }
+            current_distance += length
+        }
+        return None;
+    }   
     pub fn log_line(&mut self) ->String{
         let mut new_string = String::new();
         for span_i in 0..self.text.len(){
@@ -334,4 +426,5 @@ impl Line{
         }
         return None;
     }
+    
 }
