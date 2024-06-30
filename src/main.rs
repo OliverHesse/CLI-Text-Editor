@@ -36,10 +36,14 @@ fn refresh_line(stdout: &mut io::Stdout,current_pos: &[u16; 2],displayText:&mut 
     Ok(())
 }
 fn refresh_screen(stdout: &mut io::Stdout,displayText:&mut Vec<Line>,system_logger:&mut Logger)->io::Result<()>{
-    system_logger.log(format!("{}",displayText.len()));
+    
     stdout.queue(terminal::Clear(terminal::ClearType::All))?;
+    stdout.queue(terminal::Clear(terminal::ClearType::Purge))?;
+
     for line in displayText{
+        
         line.queue_line(stdout, system_logger);
+        
     } 
     return Ok(()); 
 
@@ -248,13 +252,20 @@ fn main_loop() -> io::Result<()> {
                                         'z'=>{
                                             main_stack.undo_change(&mut cache_stack, &mut displayText, &mut system_logger, &mut current_pos);
                                             
-                                            refresh_line(&mut stdout, &current_pos, &mut displayText, &mut system_logger)?;
-                                            
+                                            stdout.queue(Hide)?;
+                                            stdout.queue(MoveTo(0,0))?;
+                                            refresh_screen(&mut stdout, &mut displayText, &mut system_logger)?;
+                                            stdout.queue(MoveTo(current_pos[0],current_pos[1]))?;
+                                            stdout.queue(Show)?;
                                         },
                                         'y'=>{
                                             cache_stack.redo_change(&mut main_stack, &mut displayText, &mut system_logger, &mut current_pos);
                                            
-                                            refresh_line(&mut stdout, &current_pos, &mut displayText, &mut system_logger)?;
+                                            stdout.queue(Hide)?;
+                                            stdout.queue(MoveTo(0,0))?;
+                                            refresh_screen(&mut stdout, &mut displayText, &mut system_logger)?;
+                                            stdout.queue(MoveTo(current_pos[0],current_pos[1]))?;
+                                            stdout.queue(Show)?;
                                             
                                         },
                                         _=>{}
@@ -289,14 +300,22 @@ fn main_loop() -> io::Result<()> {
                             let mut new_line_pos:u16 = 0;
                             if current_pos[0] == 0{
                                 //create new line at index 0
-                         
-                                new_line_pos = current_pos[1];
-                                main_stack.add_change(ChangeType::AddLine, &mut current_pos);
-                                current_pos[1] +=1;
+                                //fix a bit. since if i am on an empty line this breaks a bit//if currPos ==0 and len=new line below
+                                if(displayText[usize::from(current_pos[1])].len == 0){
+                                    current_pos[1] +=1;
+                                    new_line_pos = current_pos[1];
+                                    main_stack.add_change(ChangeType::AddLine, &mut current_pos);
+                                }else{
+                                    new_line_pos = current_pos[1];
+                                    main_stack.add_change(ChangeType::AddLine, &mut current_pos);
+                                    current_pos[1] +=1;
+                                }
+                               
                             }else if current_pos[0] == displayText[usize::from(current_pos[1])].len{
                                 
                                 new_line_pos = current_pos[1]+1;
                                 current_pos[1] +=1;
+                                
                                 main_stack.add_change(ChangeType::AddLine, &mut current_pos);
                             }else{
                                 new_line = displayText[usize::from(current_pos[1])].split_line(usize::from(current_pos[0]));

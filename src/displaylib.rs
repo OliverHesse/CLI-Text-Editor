@@ -3,7 +3,7 @@ use std::{ fmt::format, thread::current};
 use crossterm::style::{Attribute, Attributes, Color};
 
 use crate::loglib::{self, Logger};
-#[derive(Clone,Debug)]
+#[derive(Clone,Debug,PartialEq)]
 pub enum ChangeType {
     Add(StyledCharacter),
     Delete(StyledCharacter),
@@ -11,7 +11,7 @@ pub enum ChangeType {
     AddLine,
     RemoveLine,
 }
-#[derive(Clone,Debug)]
+#[derive(Clone,Debug,PartialEq)]
 pub struct StyledCharacter{
     pub ch:char,
     pub background_color:Color,
@@ -107,12 +107,13 @@ impl ChangeStack {
             Some(a)=>a,
             None=>return,
         };
-        other_stack.add_action(current_action.clone());
+        let mut modified_action = Action{all_changes:Vec::new()};
+        system_logger.log(format!("running corectly\n"));
         for change in current_action.all_changes{
             match change.change_type{
                 ChangeType::Add(styled_character)=>{
                     //character was added so remove it.
-                   
+                    modified_action.all_changes.push(Change{row:change.row,column:change.column,change_type:ChangeType::Add(styled_character.clone())});
                     displayText[usize::from(change.row)].remove_character(change.column-1, system_logger);
                     //update current_position
                     current_pos[0] = change.column-1;
@@ -120,22 +121,31 @@ impl ChangeStack {
                 },
                 ChangeType::Delete(styled_character)=>{
                     //character was removed so add it
+                    system_logger.log(format!("issue is when adding character\n"));
+                    
+                    modified_action.all_changes.push(Change{row:change.row,column:change.column,change_type:ChangeType::Delete(styled_character.clone())});
                     displayText[usize::from(change.row)].add_character(styled_character.ch, change.column, styled_character.attributes, system_logger);
                     current_pos[0] = change.column+1;
                     current_pos[1] = change.row;
+
+                 
                 },
                 ChangeType::ChangeAttribute(styled_character)=>{
                     //change styling on character in that pos
                     //TODO add method in line to do this
                 },
                 ChangeType::AddLine=>{
+                    system_logger.log(format!("issue is when adding line\n"));
                     displayText.remove(usize::from(change.row));
                     current_pos[0] = change.column;
                     current_pos[1] = change.row-1;
+                   
+                    modified_action.all_changes.insert(0,change.clone());
                 },
                 ChangeType::RemoveLine=>{
                     let new_line = Line{text:Vec::new(),len:0};
                     displayText.insert(usize::from(change.row), new_line);
+                    modified_action.all_changes.push(change.clone());
                     current_pos[0] = change.column;
                     current_pos[1] = change.row+1;
                 },
@@ -143,6 +153,7 @@ impl ChangeStack {
             };
             
         }
+        other_stack.add_action(modified_action);
         
 
     }
@@ -151,16 +162,19 @@ impl ChangeStack {
         //also loop through changes and edit displayText
         //TODO fix to work when redo when a change moves to a different line
         
-        let current_action = match  self.actions.pop(){
+        let mut current_action = match  self.actions.pop(){
             Some(a)=>a,
             None=>return,
         };
-        other_stack.add_action(current_action.clone());
+        //current_action.all_changes.reverse();
+        system_logger.log(format!("{:?}\n",current_action.all_changes));
+         let mut modified_action =current_action.clone();
+        let mut primary_change_type:Option<ChangeType> = None;
         for change in current_action.all_changes{
             match change.change_type{
                 ChangeType::Add(styled_character)=>{
                     //in cache stack so to redo it we need to add it back
-                    
+                    system_logger.log(format!("for some reason this was called\n"));
                     displayText[usize::from(change.row)].add_character( styled_character.ch,change.column-1,styled_character.attributes,system_logger);
                     //update current_position
                     current_pos[0] = change.column;
@@ -168,9 +182,15 @@ impl ChangeStack {
                 },
                 ChangeType::Delete(styled_character)=>{
                     //ned to remove it
-                    displayText[usize::from(change.row)].remove_character(change.column, system_logger);
-                    current_pos[0] = change.column;
                     current_pos[1] = change.row;
+                    displayText[usize::from(current_pos[1])].remove_character(change.column, system_logger);
+                    if primary_change_type == Some(ChangeType::AddLine){
+                        current_pos[1] = change.row+1;
+                        displayText[usize::from(current_pos[1])].push_char(styled_character.ch, styled_character.attributes,system_logger);
+                    }
+                    
+                    current_pos[0] = change.column;
+                   
                 },
                 ChangeType::ChangeAttribute(styled_character)=>{
                     //change styling on character in that pos
@@ -180,19 +200,28 @@ impl ChangeStack {
                     displayText.remove(usize::from(change.row));
                     current_pos[0] = change.column;
                     current_pos[1] = change.row-1;
+                    primary_change_type = Some(ChangeType::RemoveLine);
                 },
                 ChangeType::AddLine=>{
                     let new_line = Line{text:Vec::new(),len:0};
                     displayText.insert(usize::from(change.row), new_line);
-                    current_pos[0] = change.column;
-                    current_pos[1] = change.row+1;
+                    current_pos[0] = 0;
+                    current_pos[1] = change.row;
+                    primary_change_type = Some(ChangeType::AddLine);
                 },
             }
+           
+    
         }
+        if primary_change_type == Some(ChangeType::AddLine){
+            let change = modified_action.all_changes.remove(modified_action.all_changes.len()-1);
+            modified_action.all_changes.insert(0, change);
+        }
+        other_stack.add_action(modified_action);
     }
     pub fn add_owned_line(&mut self,new_line:&mut Line,current_pos: &mut [u16; 2]){
         let mut changes = Vec::<Change>::new();
-        changes.push(Change{row:current_pos[1],column:current_pos[0],change_type:ChangeType::AddLine});
+        
         let mut curr_x = current_pos[0].clone();
         for span_i in 0..new_line.text.len(){
             //loop through each Span
@@ -203,6 +232,7 @@ impl ChangeStack {
             }
         }
         //changes.reverse();
+        changes.push(Change{row:current_pos[1]+1,column:current_pos[0],change_type:ChangeType::AddLine});
         self.add_action(Action{all_changes:changes});
     }
     pub fn clear_stack(&mut self){
@@ -426,5 +456,7 @@ impl Line{
         }
         return None;
     }
-    
+    pub fn push_char(&mut self,ch:char,attributes:Attributes,system_logger:&mut loglib::Logger){
+        self.add_character(ch, self.len, attributes, system_logger);
+    }
 }

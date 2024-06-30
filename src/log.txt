@@ -1,1 +1,36 @@
-32
+running corectly
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding character
+issue is when adding line
+[Change { row: 1, column: 3, change_type: AddLine }, Change { row: 0, column: 3, change_type: Delete(StyledCharacter { ch: 's', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 4, change_type: Delete(StyledCharacter { ch: ' ', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 5, change_type: Delete(StyledCharacter { ch: 'i', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 6, change_type: Delete(StyledCharacter { ch: 's', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 7, change_type: Delete(StyledCharacter { ch: ' ', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 8, change_type: Delete(StyledCharacter { ch: 's', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 9, change_type: Delete(StyledCharacter { ch: 'o', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 10, change_type: Delete(StyledCharacter { ch: 'm', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 11, change_type: Delete(StyledCharacter { ch: 'e', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 12, change_type: Delete(StyledCharacter { ch: ' ', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 13, change_type: Delete(StyledCharacter { ch: 't', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 14, change_type: Delete(StyledCharacter { ch: 'e', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 15, change_type: Delete(StyledCharacter { ch: 'm', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 16, change_type: Delete(StyledCharacter { ch: 'p', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 17, change_type: Delete(StyledCharacter { ch: 'o', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 18, change_type: Delete(StyledCharacter { ch: 'r', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 19, change_type: Delete(StyledCharacter { ch: 'a', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 20, change_type: Delete(StyledCharacter { ch: 'r', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 21, change_type: Delete(StyledCharacter { ch: 'y', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 22, change_type: Delete(StyledCharacter { ch: ' ', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 23, change_type: Delete(StyledCharacter { ch: 't', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 24, change_type: Delete(StyledCharacter { ch: 'e', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 25, change_type: Delete(StyledCharacter { ch: 'x', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 26, change_type: Delete(StyledCharacter { ch: 't', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 27, change_type: Delete(StyledCharacter { ch: '2', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 28, change_type: Delete(StyledCharacter { ch: '2', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 29, change_type: Delete(StyledCharacter { ch: '3', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 30, change_type: Delete(StyledCharacter { ch: '2', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 31, change_type: Delete(StyledCharacter { ch: '3', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 32, change_type: Delete(StyledCharacter { ch: '2', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 33, change_type: Delete(StyledCharacter { ch: '4', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 34, change_type: Delete(StyledCharacter { ch: '2', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }, Change { row: 0, column: 35, change_type: Delete(StyledCharacter { ch: '!', background_color: Black, foreground_color: White, attributes: Attributes(0) }) }]

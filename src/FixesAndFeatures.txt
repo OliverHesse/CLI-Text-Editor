@@ -4,15 +4,18 @@ Pressing Enter in the middle of a line does not move it to a new line - Fixed
 If at end of last line and press enter new line is not created- Fixed
 CTRL-Y and CTRL-Z can sometimes bug out causing cursor to teleport somewhere and create blank text -Not Fixed
 When in empty file pressing backspace crashes the application - Fixed
-CTRL-Z and Y to work with line splitting(add line del line)-Not Fixed
+CTRL-Z does not work with line split - Fixed
+CTRL-Y does not work with line split - Not Fixed (cannot fix it until i redo the undo/redo code)
 Shift ENTER crashes the program -Fixed
 
 
-Shift Select,Delete And Chanage attribute- Not Implemented
-Copy and paste- Not Implemented
+
 
 
 Create a custom file traversal console(can be very rudimentary) - Not Implemented
 No way to open a text file(on startup go to a select file menu instead) -Not Implemented
 add commands like CTRL-O to let the user open a new file whilst working on another, CTRL-S to save a file - Not Implemented
 add a way for users to create and save a brand new text file - Not Implemented
+
+Shift Select,Delete And Chanage attribute- Not Implemented
+Copy and paste- Not Implemented
